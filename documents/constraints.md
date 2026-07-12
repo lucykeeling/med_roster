@@ -1,0 +1,8 @@
+Rules according to Public Health System Nurses' and Midwives (State) Award 2025
+ - ordinary hours for day workers, exclusive of meal times will be 152 hours per 28 calendar days to be worked Monday to Friday inclusive and commence on such days at or after 6.00am and before 10.00am
+  - ordinary hours for shift workers, exclusive of meal times shall not exceed an average of 38 hours per week in each roster cycle
+  The hours of work prescribed in subclauses (i) and (ii) of this clause will, where possible, be arranged in such a manner that in each roster cycle of 28 calendar days each employee will not work his/her ordinary hours of work on more than nineteen days in the cycle. Provided that employees who work 8 hour shifts are entitled to 12 additional days off duty per annum (per NSW Health Policy Directive PD2023_006 Leave Matters for the NSW Health Service); employees working 10 hour shifts are entitled to one additional day off duty each five weeks; and employees working other combinations of shifts are entitled to such number of additional days off duty per annum as will ensure that their ordinary hours of work do not exceed an average of 38 hours per week.
+   - Except in cases of emergency, after having served a period of night duty, an employee will serve an equivalent period of time off night duty before again undertaking a period of night duty unless agreed otherwise between an employee and local nursing management.
+ - Except in cases of emergency, an employee changing from night duty to day duty or from day duty to night duty will be free from duty during the 20 hours immediately preceding the commencement of the changed duty
+
+ 
