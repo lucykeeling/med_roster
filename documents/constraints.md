@@ -1,8 +1,31 @@
-Rules according to Public Health System Nurses' and Midwives (State) Award 2025
- - ordinary hours for day workers, exclusive of meal times will be 152 hours per 28 calendar days to be worked Monday to Friday inclusive and commence on such days at or after 6.00am and before 10.00am
-  - ordinary hours for shift workers, exclusive of meal times shall not exceed an average of 38 hours per week in each roster cycle
-  The hours of work prescribed in subclauses (i) and (ii) of this clause will, where possible, be arranged in such a manner that in each roster cycle of 28 calendar days each employee will not work his/her ordinary hours of work on more than nineteen days in the cycle. Provided that employees who work 8 hour shifts are entitled to 12 additional days off duty per annum (per NSW Health Policy Directive PD2023_006 Leave Matters for the NSW Health Service); employees working 10 hour shifts are entitled to one additional day off duty each five weeks; and employees working other combinations of shifts are entitled to such number of additional days off duty per annum as will ensure that their ordinary hours of work do not exceed an average of 38 hours per week.
-   - Except in cases of emergency, after having served a period of night duty, an employee will serve an equivalent period of time off night duty before again undertaking a period of night duty unless agreed otherwise between an employee and local nursing management.
- - Except in cases of emergency, an employee changing from night duty to day duty or from day duty to night duty will be free from duty during the 20 hours immediately preceding the commencement of the changed duty
 
- 
+======================================================================
+Nursing Roster
+======================================================================
+
+
+Rules according to Public Health System Nurses' and Midwives (State) Award 2025
+
+ Hard Constraints:
+ Shift-workers:
+ - 4 week roster cycle
+ - full time employees work 152 hours balanced over the four week period working 12 x 12hr shifts and 1 x 8hr shift
+ - day shift is 7:30hr to 20:00hr (12.5 hours, includes 1 x 30 minute unpaid break)
+ - night shift is 19:30hr to 08:00hr (12.5 horus and includes 1 x 30 minute unpaid break)
+ - the 8hr shift is either 07:30hr to 16:00hr or 11:30hr to 20:00hr
+ - must have a minimum of 11.5 hour break between shifts
+ - maximum 3 consecutive 12 hour shifts in a row, except once in a six week cycle you can work four consecutive shifts if you request this
+ - must not be rostered for a single day off unless you request this 
+ - rosters must reflect an equal distribution of shifts amongst employees, no more than 50% of shifts should be night shifts unless there is an agreement between the staff member and nurse unit manager
+ - must have 2 team leaders rostered on per shift, ideally 3 where possible
+ - 10 nurses rostered on a day shift, 9 nurses rostered on a night shift
+
+ Soft Constraints:
+ - 1 AIN rostered per day shift
+ - weekends should be evenly distributed
+
+
+======================================================================
+Medical Roster
+======================================================================
+

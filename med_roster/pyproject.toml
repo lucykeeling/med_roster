@@ -1,13 +1,29 @@
 [project]
-name = "med-roster"
+name = "med_roster"
 version = "0.1.0"
-description = "Add your description here"
+description = "Medical and nursing scheduling assistant"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = []
 
-[dependency-groups]
-dev = [
-    "pytest>=9.1.1",
-    "ruff>=0.15.21",
-]
+[tool.uv.dev-dependencies]
+pytest = "^8.0.0"
+ruff = "^0.3.0"
+
+# --- RUFF CONFIGURATION ---
+[tool.ruff]
+# Target Python version
+target-version = "py312"
+# Set the line length limit (standard is 88 or 120)
+line-length = 88
+
+[tool.ruff.lint]
+# Enable Pyflakes (F) and flake8 (E, W) codes by default.
+# 'I' enables automatic import sorting (like isort)
+select = ["E", "F", "W", "I"]
+ignore = []
+
+# --- PYTEST CONFIGURATION ---
+[tool.pytest.ini_options]
+# Tell pytest where to look for tests
+testpaths = ["tests"]
