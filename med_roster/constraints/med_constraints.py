@@ -1,10 +1,4 @@
 from ortools.sat.python import cp_model
-
-# FIX: `from .doctor.py import ...` isn't valid syntax - module paths don't
-# include the .py extension. doctor.py also lives one level up (med_roster/),
-# not inside constraints/, so a relative `.doctor` import would still be
-# wrong. Using the absolute package path, matching how google_nurse.py is
-# imported elsewhere in this project.
 from med_roster.doctor import Doctor, Shift
 
 num_doctors = 35
@@ -34,36 +28,31 @@ doctors = [
 ]
 
 # Variables:
-# FIX: shift types are now Shift objects (from doctor.py) keyed by name,
-# instead of the old dict keyed by a 0-5 integer that had no relationship
-# to the string-keyed MIN_DOCTORS_PER_SHIFT/SHIFT_DURATION dicts it used to
-# be checked against. Every shifts[(n, d, s)] variable below is now keyed
-# by (doctor index, day, shift name), so shift metadata and the actual
-# variables being constrained finally refer to the same thing.
+# FIX: added actual clock start/end times per shift (this was the TODO in
+# the rest-period constraint below). Note: a few of these clock spans are
+# 30 minutes longer than the `duration` value (e.g. WEEKDAY_MORNING is
+# 08:00-16:30 = 8.5h clock time, but duration=8) - that's presumably a
+# handover overlap between shifts (WEEKDAY_NIGHT ends 08:30, WEEKDAY_MORNING
+# starts 08:00), so left `duration` untouched since it drives the paid
+# fortnightly hours target and wasn't asked to change. Flagging in case that
+# 30-minute gap wasn't intentional.
 SHIFTS = {
-    'WEEKDAY_MORNING_REG': Shift('WEEKDAY_MORNING_REG', duration=8, role_requirements=['REGISTRAR'], min_doctors=5),
-    'WEEKDAY_MORNING_RES': Shift('WEEKDAY_MORNING_RES', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=5),
-    'WEEKDAY_MID_MORNING': Shift('WEEKDAY_MID_MORNING', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=0),  # optional - no minimum
-    'WEEKDAY_AFTERNOON_REG': Shift('WEEKDAY_AFTERNOON_REG', duration=8, role_requirements=['REGISTRAR'], min_doctors=2),
-    'WEEKDAY_AFTERNOON_RES': Shift('WEEKDAY_AFTERNOON_RES', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=2),
-    'WEEKDAY_NIGHT_REG': Shift('WEEKDAY_NIGHT_REG', duration=8, role_requirements=['REGISTRAR'], min_doctors=2),
-    'WEEKDAY_NIGHT_RES': Shift('WEEKDAY_NIGHT_RES', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=2),
-    'WEEKEND_DAY_12_REG': Shift('WEEKEND_DAY_12_REG', duration=12, role_requirements=['REGISTRAR'], min_doctors=1),
-    'WEEKEND_DAY_12_RES': Shift('WEEKEND_DAY_12_RES', duration=12, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=2),
-    'WEEKEND_DAY_8_RES': Shift('WEEKEND_DAY_8_RES', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=3),
-    'WEEKEND_NIGHT_REG': Shift('WEEKEND_NIGHT_REG', duration=12, role_requirements=['REGISTRAR'], min_doctors=1),
-    'WEEKEND_NIGHT_RES': Shift('WEEKEND_NIGHT_RES', duration=12, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=2),
+    'WEEKDAY_MORNING_REG': Shift('WEEKDAY_MORNING_REG', duration=8, role_requirements=['REGISTRAR'], min_doctors=5, start_time='08:00', end_time='16:30'),
+    'WEEKDAY_MORNING_RES': Shift('WEEKDAY_MORNING_RES', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=5, start_time='08:00', end_time='16:30'),
+    'WEEKDAY_MID_MORNING': Shift('WEEKDAY_MID_MORNING', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=0, start_time='10:00', end_time='18:00'),  # optional - no minimum
+    'WEEKDAY_AFTERNOON_REG': Shift('WEEKDAY_AFTERNOON_REG', duration=8, role_requirements=['REGISTRAR'], min_doctors=2, start_time='16:00', end_time='00:30'),
+    'WEEKDAY_AFTERNOON_RES': Shift('WEEKDAY_AFTERNOON_RES', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=2, start_time='16:00', end_time='00:30'),
+    'WEEKDAY_NIGHT_REG': Shift('WEEKDAY_NIGHT_REG', duration=8, role_requirements=['REGISTRAR'], min_doctors=2, start_time='00:00', end_time='08:30'),
+    'WEEKDAY_NIGHT_RES': Shift('WEEKDAY_NIGHT_RES', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=2, start_time='00:00', end_time='08:30'),
+    'WEEKEND_DAY_12_REG': Shift('WEEKEND_DAY_12_REG', duration=12, role_requirements=['REGISTRAR'], min_doctors=1, start_time='08:00', end_time='20:00'),
+    'WEEKEND_DAY_12_RES': Shift('WEEKEND_DAY_12_RES', duration=12, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=2, start_time='08:00', end_time='20:00'),
+    'WEEKEND_DAY_8_RES': Shift('WEEKEND_DAY_8_RES', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=3, start_time='08:00', end_time='16:30'),
+    'WEEKEND_NIGHT_REG': Shift('WEEKEND_NIGHT_REG', duration=12, role_requirements=['REGISTRAR'], min_doctors=1, start_time='20:00', end_time='08:00'),
+    'WEEKEND_NIGHT_RES': Shift('WEEKEND_NIGHT_RES', duration=12, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=2, start_time='20:00', end_time='08:00'),
 }
 
-# FIX: all_shifts now has to be built after SHIFTS exists - it was placed
-# above the SHIFTS dict, which would raise NameError (used before defined).
-# It's also now the list of shift-name keys rather than range(6), so it
-# lines up with SHIFTS and with every shifts[(n, d, s)] variable.
 all_shifts = list(SHIFTS.keys())
 
-# FIX: these replace the undefined WEEKEND_SHIFTS / NIGHT_SHIFT names used
-# further down - derived from the shift names themselves so they can't
-# drift out of sync with SHIFTS.
 WEEKEND_SHIFT_NAMES = [s for s in all_shifts if s.startswith('WEEKEND')]
 NIGHT_SHIFT_NAMES = [s for s in all_shifts if 'NIGHT' in s]
 
@@ -79,17 +68,6 @@ SHIFT_COST = {
 
 # Constraints:
 def assign_doctors_to_shifts(model, shifts, doctors, all_doctors, all_days, all_shifts):
-    # FIX: removed "each shift is assigned to a single doctor per day"
-    # (add_exactly_one). That's carried over from the nurse toy example
-    # where one nurse fills one shift slot, but this roster needs several
-    # doctors on the same shift simultaneously (e.g. 5 registrars on
-    # WEEKDAY_MORNING_REG) - add_exactly_one directly contradicted the
-    # min_doctors staffing constraint further down and made the model
-    # INFEASIBLE (confirmed by isolating the two constraints and solving).
-    # The lower bound on headcount is enforced later via SHIFTS[s].min_doctors;
-    # there's no upper cap per shift for now - add one later if the solver
-    # ends up piling too many spare doctors onto a single shift type.
-
     # - Each doctor works at most one shift per day
     for n in all_doctors:
         for d in all_days:
@@ -102,23 +80,41 @@ def assign_doctors_to_shifts(model, shifts, doctors, all_doctors, all_days, all_
     # already guarantees a doctor works at most one shift per day, so this
     # was fully redundant even before the rename.
 
-    # - Minimum rest period between shifts for a doctor
+    # - Minimum rest period of 10 hours between shifts for a doctor
     # FIX: the old version used `s` both as a generator-expression variable
     # and again outside that generator on the same line - generator
     # expressions have their own scope in Python 3, so the outer `s` was
-    # never actually defined and this raised NameError. True hour-based
-    # rest checking needs each shift's start/end clock time, which Shift
-    # doesn't track yet (only duration).
-    # TODO: once Shift has start/end times, replace this with a real
-    # hours-between-shifts check for every shift-type pair, not just nights.
-    # For now this covers the most important case: a doctor who works any
-    # night shift cannot work anything the next day.
-    for n in all_doctors:
-        for d in all_days:
-            if d < len(all_days) - 1:
-                worked_night_shift = sum(shifts[(n, d, s)] for s in NIGHT_SHIFT_NAMES)
-                worked_any_shift_next_day = sum(shifts[(n, d + 1, s)] for s in all_shifts)
-                model.add(worked_night_shift + worked_any_shift_next_day <= 1)
+    # never actually defined and this raised NameError. It also only ever
+    # covered "worked a night shift -> nothing next day" as an
+    # approximation, since Shift didn't track start/end clock times yet.
+    # FIX: now that SHIFTS carries real start/end times, this checks the
+    # actual gap for every (shift worked on day d, shift worked on day d+1)
+    # pair, using absolute minutes-since-day-0 so overnight shifts (that
+    # end after midnight) are handled correctly. A pair is only forbidden
+    # if its gap is under 10 hours - e.g. WEEKDAY_AFTERNOON (ends 00:00)
+    # into next-day WEEKDAY_NIGHT (starts 00:00) is a 0-hour gap and gets
+    # blocked, but WEEKDAY_NIGHT (ends 08:30) into next-day WEEKDAY_MORNING
+    # (starts 08:00) is a ~23.5-hour gap and is left alone. Only same-day
+    # (d) to next-day (d+1) pairs need checking - a doctor can work at most
+    # one shift per day, so any pair further apart than that always clears
+    # 10 hours.
+    MIN_REST_MINUTES = 10 * 60
+
+    def shift_end_minutes(s, d):
+        return d * 1440 + SHIFTS[s].start_minutes + SHIFTS[s].clock_duration_minutes
+
+    def shift_start_minutes(s, d):
+        return d * 1440 + SHIFTS[s].start_minutes
+
+    for d in all_days:
+        if d >= len(all_days) - 1:
+            continue
+        for s1 in all_shifts:
+            for s2 in all_shifts:
+                gap_minutes = shift_start_minutes(s2, d + 1) - shift_end_minutes(s1, d)
+                if gap_minutes < MIN_REST_MINUTES:
+                    for n in all_doctors:
+                        model.add(shifts[(n, d, s1)] + shifts[(n, d + 1, s2)] <= 1)
 
     # - Full time doctors work 80 hours per 14-day fortnight (38h/week,
     #   accruing 1 ADO every 28 days); part-time doctors scale by FTE.
