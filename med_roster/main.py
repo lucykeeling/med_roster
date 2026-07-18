@@ -1,6 +1,9 @@
-def main():
-    print("Hello from med-roster!")
+from fastapi import FastAPI
+from routes import router
 
+app = FastAPI()
+app.include_router(router)
 
-if __name__ == "__main__":
-    main()
+@app.get("/")
+def read_root():
+    return {"message": "Hello from med-roster!"}

@@ -84,6 +84,8 @@ Model the domain in PostgreSQL via SQLAlchemy. Core tables:
 
 Start with SQLite in dev (zero setup, SQLAlchemy makes swapping trivial), move to Postgres when you deploy.
 
+**Real-world data entry:** the primary way staff/doctor details and shift requests get into the system is by uploading an Excel spreadsheet (a NUM's existing hiring/leave records aren't going to arrive as JSON). The CRUD endpoints in Step 5 populate the same `staff`/`request` tables, but should be treated as the fallback for one-off edits and testing, not the main input path.
+
 **Checkpoint:** you can seed a fake ward of ~20 staff and a demand template from a script.
 
 ---
@@ -115,6 +117,7 @@ This is the step to spend the most time on, and the one that will teach you the 
 Endpoints (all JSON, documented automatically by FastAPI's built-in Swagger UI):
 
 - `POST /wards`, `POST /staff`, `POST /requests` — CRUD for the data model.
+- `POST /staff/import` — accepts an uploaded Excel file containing staff/doctor details and shift requests, parses it into the same `staff`/`request` rows the CRUD endpoints would create. This is the main data-entry path in practice; validate rows on the way in and report which ones failed rather than rejecting the whole file on one bad row.
 - `POST /roster-periods/{id}/generate` — runs the solver. Solves can take seconds-to-minutes, so run it as a background task and poll status (or just accept a 30s request in v1 — don't gold-plate).
 - `GET /roster-periods/{id}` — the roster, per-staff and per-day views.
 - `POST /roster-periods/{id}/validate` — run the validator on a (possibly hand-edited) roster.

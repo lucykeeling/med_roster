@@ -9,6 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
+# Local secrets
+.env
+
 
 # Ignore an entire folder of notes
 documents/

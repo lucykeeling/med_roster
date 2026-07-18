@@ -1,5 +1,5 @@
 from ortools.sat.python import cp_model
-from med_roster.doctor import Doctor, Shift
+from doctor import Doctor, Shift
 
 num_doctors = 35
 num_days = 28
