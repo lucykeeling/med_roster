@@ -28,14 +28,7 @@ doctors = [
 ]
 
 # Variables:
-# FIX: added actual clock start/end times per shift (this was the TODO in
-# the rest-period constraint below). Note: a few of these clock spans are
-# 30 minutes longer than the `duration` value (e.g. WEEKDAY_MORNING is
-# 08:00-16:30 = 8.5h clock time, but duration=8) - that's presumably a
-# handover overlap between shifts (WEEKDAY_NIGHT ends 08:30, WEEKDAY_MORNING
-# starts 08:00), so left `duration` untouched since it drives the paid
-# fortnightly hours target and wasn't asked to change. Flagging in case that
-# 30-minute gap wasn't intentional.
+
 SHIFTS = {
     'WEEKDAY_MORNING_REG': Shift('WEEKDAY_MORNING_REG', duration=8, role_requirements=['REGISTRAR'], min_doctors=5, start_time='08:00', end_time='16:30'),
     'WEEKDAY_MORNING_RES': Shift('WEEKDAY_MORNING_RES', duration=8, role_requirements=['RESIDENT', 'REGISTRAR'], min_doctors=5, start_time='08:00', end_time='16:30'),
@@ -55,6 +48,16 @@ all_shifts = list(SHIFTS.keys())
 
 WEEKEND_SHIFT_NAMES = [s for s in all_shifts if s.startswith('WEEKEND')]
 NIGHT_SHIFT_NAMES = [s for s in all_shifts if 'NIGHT' in s]
+DAY_SHIFT_NAMES = [s for s in all_shifts if s not in NIGHT_SHIFT_NAMES]
+
+# Maps an uploaded request code onto the shifts that satisfy it. These keys are
+# exactly the request_type values upload.py writes (D/N/x -> DAY/NIGHT/OFF), so
+# the solver speaks the same vocabulary as the spreadsheet. 'OFF' is handled
+# separately, via the day_off variables.
+REQUEST_SHIFT_GROUPS = {
+    'DAY': DAY_SHIFT_NAMES,
+    'NIGHT': NIGHT_SHIFT_NAMES,
+}
 
 # Relative cost weight per shift, used to steer any staffing *beyond* the
 # required minimum onto cheaper shifts (weekday over weekend, day over
@@ -67,18 +70,21 @@ SHIFT_COST = {
 
 
 # Constraints:
-def assign_doctors_to_shifts(model, shifts, doctors, all_doctors, all_days, all_shifts):
+def assign_doctors_to_shifts(
+    model, shifts, doctors, all_doctors, all_days, all_shifts,
+    requests=None, start_weekday=0,
+):
+    # `requests` maps (doctor_index, day_index) -> 'DAY' | 'NIGHT' | 'OFF' and
+    # comes from the uploaded spreadsheet (see upload.py). `start_weekday` is
+    # the weekday of day 0 (0 = Monday), so weekend detection lines up with the
+    # real calendar dates in the sheet rather than assuming the period starts on
+    # a Monday. Both are optional: no requests + start_weekday=0 reproduces the
+    # original behaviour exactly.
     # - Each doctor works at most one shift per day
     for n in all_doctors:
         for d in all_days:
             model.add_at_most_one(shifts[(n, d, s)] for s in all_shifts)
 
-    # FIX: removed the old "no consecutive shifts" block. It compared shift
-    # index s to s+1 as if all_shifts were an ordered sequence of same-day
-    # time slots - that stopped meaning anything once shifts became named
-    # (dict keys aren't ordered by time of day), and add_at_most_one above
-    # already guarantees a doctor works at most one shift per day, so this
-    # was fully redundant even before the rename.
 
     # - Minimum rest period of 10 hours between shifts for a doctor
     # FIX: the old version used `s` both as a generator-expression variable
@@ -182,6 +188,23 @@ def assign_doctors_to_shifts(model, shifts, doctors, all_doctors, all_days, all_
             # last day's variable per doctor instead of every day.
             consecutive_days_off.append(is_consecutive)
 
+    # - Honour uploaded shift requests (SOFT CONSTRAINT)
+    # Each satisfied request adds 1 to the objective. These are preferences, so
+    # nothing here is forced - a request just makes that outcome more attractive.
+    # day_off is already defined above, so 'OFF' requests reuse it. A DAY/NIGHT
+    # request is satisfied by working any shift in that group; since a doctor
+    # works at most one shift per day, each sum below is 0 or 1.
+    # To make an *approved* leave request hard instead of soft, pin
+    # day_off[(n, d)] to 1 for it rather than adding it to this list.
+    shift_request_satisfaction = []
+    for (n, d), request_type in (requests or {}).items():
+        if request_type == 'OFF':
+            shift_request_satisfaction.append(day_off[(n, d)])
+        elif request_type in REQUEST_SHIFT_GROUPS:
+            shift_request_satisfaction.append(
+                sum(shifts[(n, d, s)] for s in REQUEST_SHIFT_GROUPS[request_type])
+            )
+
     # ==================== Shift Constraints: ==============================
 
     # - Each shift has a minimum number of doctors assigned to it, but only
@@ -201,7 +224,7 @@ def assign_doctors_to_shifts(model, shifts, doctors, all_doctors, all_days, all_
     # so the solver never assigns anyone to a "weekday morning" shift on a
     # Saturday.
     def is_weekend_day(d):
-        return d % 7 in (5, 6)
+        return (start_weekday + d) % 7 in (5, 6)
 
     def shift_applies(s, d):
         return s.startswith('WEEKEND') == is_weekend_day(d)
@@ -275,6 +298,7 @@ def assign_doctors_to_shifts(model, shifts, doctors, all_doctors, all_days, all_
     #   )
     objective_terms = {
         'consecutive_days_off': consecutive_days_off,
+        'shift_request_satisfaction': shift_request_satisfaction,
         'staffing_cost': staffing_cost,
     }
     return objective_terms
